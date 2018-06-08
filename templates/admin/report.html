@@ -1,0 +1,56 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block extrahead %}{{ block.super }}
+    <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+
+    <meta charset="utf-8">
+    <!-- 引入 ECharts 文件 使用 static 关键字-->
+    <!--<script src="static/echarts.min.js"></script>-->
+    <!--<script src="{% static 'echarts/echarts.min.js' %}"></script>-->
+<script src="https://libs.baidu.com/jquery/1.10.2/jquery.min.js"></script>
+
+{% endblock %}
+
+{% block title %} {{ content_name }} | {{ site_title }} {% endblock %}
+
+{% block content_title %}<h1>Report</h1>{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; {% if has_change_permission %}<a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>{% else %}{{ opts.verbose_name_plural|capfirst }}{% endif %}
+&rsaquo; {% blocktrans with name=content_name %} {{ name }}{% endblocktrans %}
+</div>
+{% endblock %}
+
+
+{% block report %}
+    <!-- 为 ECharts 准备一个具备大小（宽高）的 DOM -->
+
+      <div id="div-data">
+        <h3>Quality numbers for NOC</h3>
+            <p>Please type in the Year(e.g 2018) <input type="text" name="year" />
+              <input class="year_submit" type="submit" value="search" />
+            </p>
+        <div class="year_value"></div>
+      </div>
+
+     <script>
+      $(".year_submit").click(function(){
+          var year = $("input[name='year']").val();
+          // alert(year)
+          $.ajax({
+            url:"{% url "admin:show_data" %}",
+            type:"post",
+            data:{"year":year},
+            success:function(data){
+              $(".year_value").text("")
+             $(".year_value").append(data)
+            }
+          });
+        });
+      </script>
+{% endblock %}
+

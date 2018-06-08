@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+    <script src="{% static 'echarts/echarts.min.js' %}"></script>
+</head>
+<body>
+
+<div id="main" style="height:550px;width: 100%">
+    <div id="bar" style="width:60%;height:550px;float:left;"></div>
+    <div id="pie" style="width:40%;height:550px;float:right;"></div>
+</div>
+    <script>
+        // 基于准备好的dom，初始化echarts实例
+        var myBarChart = echarts.init(document.getElementById('bar'));
+        var x_data_list = {{ month_list|safe }};
+        var se_data_list = {{ num_list|safe }};
+        // 指定图表的配置项和数据
+        var option = {
+
+            title : {
+                text: 'Monthly Quality issue numbers',
+                x:'center',
+            },
+            tooltip : {
+                trigger: 'axis',
+                axisPointer:{
+                    type: 'none',
+                },
+                formatter: function(params){
+                    var tar = params[0];
+                    return tar.name+ '</br>'+tar.seriesName+' : '+tar.value;
+                }
+            },
+            legend: {
+                data:['Quality numbers'],
+                right:'10%',
+                top:'5%',
+            },
+            toolbox: {
+                show : true,
+                feature : {
+                    saveAsImage : {
+                        show:true,
+                        title: 'Save as Image'
+                    }
+                }
+            },
+            calculable : true,
+            xAxis : [
+                {
+                    type : 'category',
+                    data : x_data_list,
+                }
+            ],
+            yAxis : [
+                {
+                    type : 'value',
+                    name : 'Num',
+                    triggerEvent:true,
+                }
+            ],
+            series : [
+                {
+                    name:'Quality numbers',
+                    type:'bar',
+                    data:se_data_list,
+                    barWidth:'60%',
+                 //   markLine : {
+                 //       label:{
+                 //           formatter:'{c}',
+                 //       },
+                 //       data : [
+                 //           {
+                 //               type : 'average',
+                 //               name : 'ave num',
+                 //           }
+                 //       ],
+                 //       emphasis:{
+                 //           label:{
+                 //               formatter:'{b}',
+                 //           }
+                 //       }
+                 //   }
+                }
+            ]
+         };
+
+        // 使用刚指定的配置项和数据显示图表
+        myBarChart.setOption(option);
+
+function func1(month_data){
+        // 基于准备好的dom，初始化echarts实例
+        var myPieChart = echarts.init(document.getElementById('pie'));
+        var datas_year = {{ entrynoc_top5_year|safe }};
+        var month = month_data.split('.')[1];
+        var datas_month = datas_year[month-1];
+        var data1 = [];
+        var data2 = [];
+        for (var i=0;i<5;i++){
+            data1.push(datas_month[i][0]);
+            var obj = new Object();
+            obj.name=datas_month[i][0];
+            obj.value=datas_month[i][1];
+            data2.push(obj);
+        }
+
+        option = {
+            title : {
+                text: month_data + ' '+'Top5 quality issues',
+                x:'center',
+            },
+            tooltip : {
+                trigger: 'item',
+                formatter: "{a} <br/>{b} : {c} ({d}%)"
+            },
+            legend: {
+                orient: 'vertical',
+                left: 'right',
+                top:'10%',
+                data: data1,
+            },
+            series : [
+                {
+                    name: 'Data Source',
+                    type: 'pie',
+                    radius : [0,'50%'],
+                    center: ['50%', '65%'],
+                    data: data2,
+                    itemStyle: {
+                        emphasis: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }
+            ]
+        };
+
+        // 使用刚指定的配置项和数据显示图表
+        myPieChart.setOption(option);
+ };
+
+        myBarChart.on('click', function (params) {
+            if(params.componentType == "series"){
+               func1(params.name);
+            }
+        });
+
+
+
+
+    </script>
+
+</body>
+</html>
