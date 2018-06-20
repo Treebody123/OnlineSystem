@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'EntrySOC',
     'EntryNOC',
-    'djcelery',
+    # 'djcelery',
+    'django_apscheduler',
 ]
 
 MIDDLEWARE = [

@@ -19,3 +19,6 @@ from django.urls import path
 urlpatterns = [
     path('', admin.site.urls),
 ]
+
+
+import EntryNOC.jobs     # start the schedule job

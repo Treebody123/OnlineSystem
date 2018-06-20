@@ -114,7 +114,7 @@ function func1(month_data){
             },
             tooltip : {
                 trigger: 'item',
-                formatter: "{a} <br/>{b} : {c} ({d}%)"
+                formatter: "{b} : {c} "
             },
             legend: {
                 orient: 'vertical',
@@ -124,7 +124,7 @@ function func1(month_data){
             },
             series : [
                 {
-                    name: 'Data Source',
+                    name: 'Quality numbers',
                     type: 'pie',
                     radius : [0,'50%'],
                     center: ['50%', '65%'],
@@ -134,6 +134,16 @@ function func1(month_data){
                             shadowBlur: 10,
                             shadowOffsetX: 0,
                             shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    },
+                    label:{
+                        formatter: '{a|{a}}：{c}  ',
+                        rich:{
+                            a:{
+                               // color: '#999',
+                                lineHeight: 22,
+                                align: 'center'
+                            },
                         }
                     }
                 }

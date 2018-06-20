@@ -24,7 +24,7 @@ NOC_add_fieldsets = (
         }),
 	)
 
-NOC_change_fieldsets = (
+NOC_management_change_fieldsets = (
         ('Recommended fields',{
             'fields':('rep_date','finding_source','ticket_num','finding_description')
         }),
@@ -33,6 +33,20 @@ NOC_change_fieldsets = (
             'fields': (
                 'finding_level', 'finding_responsible','quality_track_measurement',
                 'acknowledge_status','email_send',
+                'quality_track_comments','finding_final_status',
+            )
+        }),
+	)
+
+NOC_member_change_fieldsets = (
+        ('Recommended fields',{
+            'fields':('rep_date','finding_source','ticket_num','finding_description')
+        }),
+        ('Other options',{
+            'classes':('collapse',),
+            'fields': (
+                'finding_level', 'finding_responsible','quality_track_measurement',
+                'acknowledge_status',
                 'quality_track_comments','finding_final_status',
             )
         }),
@@ -50,7 +64,7 @@ admin.site.index_title = 'Quality Management'
 @admin.register(EntryNOC)
 class EntryNOCAdmin(admin.ModelAdmin):
     list_display = ('ticket_num','rep_date','finding_description','finding_responsible','acknowledge_status','finding_final_status','Colored_status')
-    search_fields = ('ticket_num','finding_description')
+    search_fields = ('ticket_num','finding_description','finding_responsible__first_name','finding_responsible__last_name')
     #list_per_page设置每页显示多少条记录，默认是100条
     list_per_page = 20
     admin.site.empty_value_display = '--------'
@@ -67,7 +81,7 @@ class EntryNOCAdmin(admin.ModelAdmin):
             return qs
         elif Group.objects.get(user=request.user).name == 'NOC_OSN_Management':
             return qs
-        return qs.filter(finding_responsible=request.user)
+        return qs.filter(finding_responsible=request.user)       #NOC_members
 
     def get_readonly_fields(self,request,obj=None):
         self.readonly_fields = []
@@ -100,7 +114,7 @@ class EntryNOCAdmin(admin.ModelAdmin):
 
     def send_email(self,request,to_email,mail_msg):
         email_host = 'rb-smtp-int.bosch.com'
-        from_email = 'Yu.liu7@cn.bosch.com'
+        from_email = 'CI-Network-Operation-Center@bosch.com'
 
         msg = MIMEMultipart()
         msg['Subject'] = 'Notification to Quality finding'  # 标题
@@ -117,9 +131,9 @@ class EntryNOCAdmin(admin.ModelAdmin):
 
     def save_model(self,request,obj,form,change):
         if change:           #页面修改时
-            if obj.email_send:
-                if Group.objects.get(user=request.user).name == 'NOC_Group_Members':
-                    to_email_userlist = User.objects.filter(groups__name='NOC_Management')         #send mail to person in group " NOC Management"
+            if (obj.finding_final_status != 'R') or (obj.finding_final_status != 'C'):      #对于不是resolved  or cancalled 的条目
+                if Group.objects.get(user=request.user).name == 'NOC_Group_Members':     #send mail to person in group " NOC Management" after update quality issue
+                    to_email_userlist = User.objects.filter(groups__name='NOC_Management')
                     to_email = []
                     for i in to_email_userlist:
                         to_email.append(i.email)
@@ -129,16 +143,17 @@ class EntryNOCAdmin(admin.ModelAdmin):
                     '''
                     self.send_email(request,to_email,mail_msg)
                 elif Group.objects.get(user=request.user).name == 'NOC_Management':   #send mail function to NOC responsible
-                    to_email_firstname = obj.finding_responsible.first_name
-                    to_email_lastname = obj.finding_responsible.last_name
-                    to_email = UserFullName.objects.get(first_name=to_email_firstname,
-                                                        last_name=to_email_lastname).email
-                    mail_msg = 'Please notes that your Quality issue {} has been updated.'.format(
-                        obj.ticket_num)
-                    mail_msg += '''
-                            <p><a href="http://127.0.0.1:8000:"> visit Quality Track System</a></p>
-                            '''
-                    self.send_email(request, to_email, mail_msg)
+                    if obj.email_send:
+                        to_email_firstname = obj.finding_responsible.first_name
+                        to_email_lastname = obj.finding_responsible.last_name
+                        to_email = UserFullName.objects.get(first_name=to_email_firstname,
+                                                            last_name=to_email_lastname).email
+                        mail_msg = 'Please notes that your Quality issue {} has been updated from Management.'.format(
+                            obj.ticket_num)
+                        mail_msg += '''
+                                <p><a href="http://127.0.0.1:8000:"> visit Quality Track System</a></p>
+                                '''
+                        self.send_email(request, to_email, mail_msg)
 
 
         else:       #新增加quality finding时
@@ -169,7 +184,10 @@ class EntryNOCAdmin(admin.ModelAdmin):
         return self.changeform_view(request, None, form_url, extra_context)
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
-        self.fieldsets = NOC_change_fieldsets
+        if Group.objects.get(user=request.user).name == 'NOC_Group_Members':
+            self.fieldsets = NOC_member_change_fieldsets
+        else:
+            self.fieldsets = NOC_management_change_fieldsets
         return super().change_view(
             request, object_id, form_url, extra_context=extra_context,
         )
@@ -261,7 +279,7 @@ class EntryNOCAdmin(admin.ModelAdmin):
             #     entrynoc_top5_year = self.get_entrynoc_top5_list(year, cur_month)
             #     for i in range(1,cur_month+1):
             entrynoc_top5_year = self.get_entrynoc_top5_list(year, 12)   #获取某一年所有月份的top5的多维list
-            print(entrynoc_top5_year)
+            # print(entrynoc_top5_year)
             for i in range(1,13):
                 month_list.append(year + '.' + str(i))
                 num_list.append(EntryNOC.objects.filter(rep_date__year=year, rep_date__month=i).count())
